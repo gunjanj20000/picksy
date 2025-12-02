@@ -22,12 +22,12 @@ const QuestionCard = ({ question, onAnswer }: QuestionCardProps) => {
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto p-6 md:p-10 bg-card shadow-[var(--shadow-elevated)] border-2">
-      <div className="space-y-8">
-        {/* Question section */}
-        <div className="flex flex-col md:flex-row items-center gap-6">
+    <Card className="w-full max-w-6xl mx-auto p-4 md:p-8 bg-gradient-to-br from-card via-card to-primary/5 shadow-[var(--shadow-elevated)] border-2 border-primary/20">
+      <div className="space-y-6">
+        {/* Question section - in one line */}
+        <div className="flex flex-row items-center gap-4 md:gap-6 bg-gradient-to-r from-primary/10 via-secondary/10 to-accent/10 p-4 md:p-6 rounded-2xl">
           {question.image && (
-            <div className="w-full md:w-48 h-48 flex-shrink-0 rounded-2xl overflow-hidden border-4 border-primary/20">
+            <div className="w-24 h-24 md:w-32 md:h-32 flex-shrink-0 rounded-xl overflow-hidden border-3 border-primary/30 shadow-[var(--shadow-soft)]">
               <img 
                 src={question.image} 
                 alt="Question visual" 
@@ -35,31 +35,31 @@ const QuestionCard = ({ question, onAnswer }: QuestionCardProps) => {
               />
             </div>
           )}
-          <div className="flex-1 text-center md:text-left">
-            <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-4 leading-tight">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold text-foreground mb-2 md:mb-3 leading-tight">
               {question.text}
             </h1>
             <Button
               variant="ghost"
-              size="lg"
+              size="sm"
               onClick={() => speak(question.text)}
-              className="text-primary hover:text-primary hover:bg-primary/10"
+              className="text-primary hover:text-primary hover:bg-primary/10 h-8 md:h-10"
             >
-              <Volume2 className="w-8 h-8 mr-2" />
-              <span className="text-xl">फिर से सुनें</span>
+              <Volume2 className="w-5 h-5 md:w-6 md:h-6 mr-1 md:mr-2" />
+              <span className="text-sm md:text-lg">फिर से सुनें</span>
             </Button>
           </div>
         </div>
 
-        {/* Answer section */}
-        <div className="pt-6 border-t-4 border-border">
+        {/* Answer section - auto-resize in one line */}
+        <div className="pt-4">
           {question.answerType === 'yesno' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-2 gap-4 md:gap-6">
               <Button
                 variant="default"
                 size="lg"
                 onClick={() => handleAnswer('हाँ')}
-                className="h-32 text-4xl font-bold bg-success hover:bg-success/90 text-success-foreground shadow-[var(--shadow-soft)] hover:scale-105 transition-transform"
+                className="h-24 md:h-32 text-3xl md:text-4xl font-bold bg-gradient-to-br from-success to-success/80 hover:from-success/90 hover:to-success/70 text-success-foreground shadow-[var(--shadow-glow)] hover:scale-105 transition-transform"
               >
                 हाँ
               </Button>
@@ -67,23 +67,26 @@ const QuestionCard = ({ question, onAnswer }: QuestionCardProps) => {
                 variant="default"
                 size="lg"
                 onClick={() => handleAnswer('नहीं')}
-                className="h-32 text-4xl font-bold bg-destructive hover:bg-destructive/90 text-destructive-foreground shadow-[var(--shadow-soft)] hover:scale-105 transition-transform"
+                className="h-24 md:h-32 text-3xl md:text-4xl font-bold bg-gradient-to-br from-destructive to-destructive/80 hover:from-destructive/90 hover:to-destructive/70 text-destructive-foreground shadow-[var(--shadow-glow)] hover:scale-105 transition-transform"
               >
                 नहीं
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {question.imageAnswers?.map((answer) => (
+            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+              {question.imageAnswers?.map((answer, index) => (
                 <Button
                   key={answer.id}
                   variant="outline"
                   onClick={() => handleAnswer(answer.text)}
-                  className="h-auto p-0 overflow-hidden border-4 border-border hover:border-primary hover:scale-105 transition-all group"
+                  className="h-auto p-0 overflow-hidden border-3 border-border hover:border-primary hover:scale-105 transition-all group shadow-[var(--shadow-soft)]"
+                  style={{
+                    background: `linear-gradient(135deg, hsl(${index * 60} 70% 95%), hsl(${index * 60 + 30} 65% 92%))`
+                  }}
                 >
                   <div className="w-full">
                     {answer.image ? (
-                      <div className="w-full h-48 overflow-hidden">
+                      <div className="w-full aspect-square overflow-hidden">
                         <img
                           src={answer.image}
                           alt={answer.text}
@@ -91,12 +94,12 @@ const QuestionCard = ({ question, onAnswer }: QuestionCardProps) => {
                         />
                       </div>
                     ) : (
-                      <div className="w-full h-48 bg-muted flex items-center justify-center">
-                        <span className="text-6xl">🍽️</span>
+                      <div className="w-full aspect-square bg-gradient-to-br from-muted to-muted/70 flex items-center justify-center">
+                        <span className="text-4xl md:text-5xl">🍽️</span>
                       </div>
                     )}
-                    <div className="p-4 bg-card">
-                      <p className="text-2xl md:text-3xl font-bold text-foreground">
+                    <div className="p-2 md:p-3 bg-card/90 backdrop-blur-sm">
+                      <p className="text-sm md:text-lg lg:text-xl font-bold text-foreground line-clamp-2">
                         {answer.text}
                       </p>
                     </div>
