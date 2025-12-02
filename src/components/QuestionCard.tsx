@@ -54,12 +54,12 @@ const QuestionCard = ({ question, onAnswer }: QuestionCardProps) => {
         {/* Answer section - auto-resize in one line */}
         <div className="pt-4 animate-fade-in" style={{ animationDelay: '0.3s', animationFillMode: 'backwards' }}>
           {question.answerType === 'yesno' ? (
-            <div className="grid grid-cols-2 gap-4 md:gap-6 w-full">
+            <div className="flex flex-row gap-6 md:gap-12 lg:gap-16 w-full justify-center items-stretch">
               <Button
                 variant="default"
                 size="lg"
                 onClick={() => handleAnswer('हाँ')}
-                className="h-24 md:h-32 text-3xl md:text-4xl font-bold bg-gradient-to-br from-success to-success/80 hover:from-success/90 hover:to-success/70 text-success-foreground shadow-[var(--shadow-glow)] hover:scale-105 transition-transform animate-scale-in w-full"
+                className="flex-1 max-w-md h-28 md:h-36 lg:h-40 text-3xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-br from-success to-success/80 hover:from-success/90 hover:to-success/70 text-success-foreground shadow-[var(--shadow-glow)] hover:scale-105 transition-transform animate-scale-in"
                 style={{ animationDelay: '0.4s', animationFillMode: 'backwards' }}
               >
                 हाँ
@@ -68,7 +68,7 @@ const QuestionCard = ({ question, onAnswer }: QuestionCardProps) => {
                 variant="default"
                 size="lg"
                 onClick={() => handleAnswer('नहीं')}
-                className="h-24 md:h-32 text-3xl md:text-4xl font-bold bg-gradient-to-br from-destructive to-destructive/80 hover:from-destructive/90 hover:to-destructive/70 text-destructive-foreground shadow-[var(--shadow-glow)] hover:scale-105 transition-transform animate-scale-in w-full"
+                className="flex-1 max-w-md h-28 md:h-36 lg:h-40 text-3xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-br from-destructive to-destructive/80 hover:from-destructive/90 hover:to-destructive/70 text-destructive-foreground shadow-[var(--shadow-glow)] hover:scale-105 transition-transform animate-scale-in"
                 style={{ animationDelay: '0.5s', animationFillMode: 'backwards' }}
               >
                 नहीं
