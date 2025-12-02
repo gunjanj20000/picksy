@@ -22,10 +22,10 @@ const QuestionCard = ({ question, onAnswer }: QuestionCardProps) => {
   };
 
   return (
-    <Card className="w-full max-w-6xl mx-auto p-4 md:p-8 bg-gradient-to-br from-card via-card to-primary/5 shadow-[var(--shadow-elevated)] border-2 border-primary/20">
+    <Card className="w-full max-w-6xl mx-auto p-4 md:p-8 bg-gradient-to-br from-card via-card to-primary/5 shadow-[var(--shadow-elevated)] border-2 border-primary/20 animate-fade-in">
       <div className="space-y-6">
         {/* Question section - in one line */}
-        <div className="flex flex-row items-center gap-4 md:gap-6 bg-gradient-to-r from-primary/10 via-secondary/10 to-accent/10 p-4 md:p-6 rounded-2xl">
+        <div className="flex flex-row items-center gap-4 md:gap-6 bg-gradient-to-r from-primary/10 via-secondary/10 to-accent/10 p-4 md:p-6 rounded-2xl animate-scale-in" style={{ animationDelay: '0.1s', animationFillMode: 'backwards' }}>
           {question.image && (
             <div className="w-24 h-24 md:w-32 md:h-32 flex-shrink-0 rounded-xl overflow-hidden border-3 border-primary/30 shadow-[var(--shadow-soft)]">
               <img 
@@ -52,14 +52,15 @@ const QuestionCard = ({ question, onAnswer }: QuestionCardProps) => {
         </div>
 
         {/* Answer section - auto-resize in one line */}
-        <div className="pt-4">
+        <div className="pt-4 animate-fade-in" style={{ animationDelay: '0.3s', animationFillMode: 'backwards' }}>
           {question.answerType === 'yesno' ? (
-            <div className="grid grid-cols-2 gap-4 md:gap-6">
+            <div className="grid grid-cols-2 gap-4 md:gap-6 w-full">
               <Button
                 variant="default"
                 size="lg"
                 onClick={() => handleAnswer('हाँ')}
-                className="h-24 md:h-32 text-3xl md:text-4xl font-bold bg-gradient-to-br from-success to-success/80 hover:from-success/90 hover:to-success/70 text-success-foreground shadow-[var(--shadow-glow)] hover:scale-105 transition-transform"
+                className="h-24 md:h-32 text-3xl md:text-4xl font-bold bg-gradient-to-br from-success to-success/80 hover:from-success/90 hover:to-success/70 text-success-foreground shadow-[var(--shadow-glow)] hover:scale-105 transition-transform animate-scale-in w-full"
+                style={{ animationDelay: '0.4s', animationFillMode: 'backwards' }}
               >
                 हाँ
               </Button>
@@ -67,7 +68,8 @@ const QuestionCard = ({ question, onAnswer }: QuestionCardProps) => {
                 variant="default"
                 size="lg"
                 onClick={() => handleAnswer('नहीं')}
-                className="h-24 md:h-32 text-3xl md:text-4xl font-bold bg-gradient-to-br from-destructive to-destructive/80 hover:from-destructive/90 hover:to-destructive/70 text-destructive-foreground shadow-[var(--shadow-glow)] hover:scale-105 transition-transform"
+                className="h-24 md:h-32 text-3xl md:text-4xl font-bold bg-gradient-to-br from-destructive to-destructive/80 hover:from-destructive/90 hover:to-destructive/70 text-destructive-foreground shadow-[var(--shadow-glow)] hover:scale-105 transition-transform animate-scale-in w-full"
+                style={{ animationDelay: '0.5s', animationFillMode: 'backwards' }}
               >
                 नहीं
               </Button>
@@ -79,9 +81,11 @@ const QuestionCard = ({ question, onAnswer }: QuestionCardProps) => {
                   key={answer.id}
                   variant="outline"
                   onClick={() => handleAnswer(answer.text)}
-                  className="h-auto p-0 overflow-hidden border-3 border-border hover:border-primary hover:scale-105 transition-all group shadow-[var(--shadow-soft)]"
+                  className="h-auto p-0 overflow-hidden border-3 border-border hover:border-primary hover:scale-105 transition-all group shadow-[var(--shadow-soft)] animate-scale-in"
                   style={{
-                    background: `linear-gradient(135deg, hsl(${index * 60} 70% 95%), hsl(${index * 60 + 30} 65% 92%))`
+                    background: `linear-gradient(135deg, hsl(${index * 60} 70% 95%), hsl(${index * 60 + 30} 65% 92%))`,
+                    animationDelay: `${0.4 + index * 0.1}s`,
+                    animationFillMode: 'backwards'
                   }}
                 >
                   <div className="w-full">
