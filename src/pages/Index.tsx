@@ -6,9 +6,11 @@ import QuestionCard from '@/components/QuestionCard';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Settings, PartyPopper, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const Index = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -20,7 +22,7 @@ const Index = () => {
         setQuestions(loadedQuestions);
       } catch (error) {
         console.error('Error loading questions:', error);
-        toast.error('प्रश्न लोड करने में त्रुटि');
+        toast.error(t('settings.errorLoading'));
       } finally {
         setIsLoading(false);
       }
@@ -29,7 +31,7 @@ const Index = () => {
   }, []);
 
   const handleAnswer = (answer: string) => {
-    toast.success('बहुत अच्छे!', {
+    toast.success(t('app.yes') + '!', {
       icon: <PartyPopper className="w-6 h-6" />,
       duration: 2000,
     });
@@ -56,10 +58,10 @@ const Index = () => {
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
         <div className="text-center space-y-6">
           <h1 className="text-4xl md:text-6xl font-bold text-foreground">
-            कोई प्रश्न नहीं मिला
+            {t('app.noQuestions')}
           </h1>
           <p className="text-2xl text-muted-foreground">
-            पहले कुछ प्रश्न जोड़ने के लिए सेटिंग्स में जाएं
+            {t('app.addQuestionsFirst')}
           </p>
           <Button
             size="lg"
@@ -67,7 +69,7 @@ const Index = () => {
             className="text-2xl h-16 px-8"
           >
             <Settings className="w-8 h-8 mr-3" />
-            सेटिंग्स खोलें
+            {t('app.goToSettings')}
           </Button>
         </div>
       </div>
@@ -96,7 +98,7 @@ const Index = () => {
             className="text-lg md:text-xl h-12 md:h-14"
           >
             <Settings className="w-6 h-6 mr-2" />
-            सेटिंग्स
+            {t('app.settings')}
           </Button>
         </div>
 
@@ -139,7 +141,7 @@ const Index = () => {
               className="flex-1 h-14 text-xl"
             >
               <ChevronLeft className="w-6 h-6 mr-2" />
-              पिछला
+              {t('app.previous')}
             </Button>
             <Button
               variant="outline"
@@ -147,7 +149,7 @@ const Index = () => {
               onClick={goToNext}
               className="flex-1 h-14 text-xl"
             >
-              अगला
+              {t('app.next')}
               <ChevronRight className="w-6 h-6 ml-2" />
             </Button>
           </div>
