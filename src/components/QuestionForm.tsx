@@ -20,7 +20,7 @@ const QuestionForm = ({ question, onSave, onCancel, isSaving = false }: Question
   const [image, setImage] = useState(question?.image || '');
   const [answerType, setAnswerType] = useState<AnswerType>(question?.answerType || 'yesno');
   const [imageAnswers, setImageAnswers] = useState<ImageAnswer[]>(
-    question?.imageAnswers || [{ id: '1', image: '', text: '' }]
+    question?.imageAnswers || [{ id: crypto.randomUUID(), image: '', text: '' }]
   );
 
   const handleImageUpload = (file: File, setter: (url: string) => void) => {
@@ -34,7 +34,7 @@ const QuestionForm = ({ question, onSave, onCancel, isSaving = false }: Question
   const addImageAnswer = () => {
     setImageAnswers([
       ...imageAnswers,
-      { id: Date.now().toString(), image: '', text: '' },
+      { id: crypto.randomUUID(), image: '', text: '' },
     ]);
   };
 
@@ -62,7 +62,7 @@ const QuestionForm = ({ question, onSave, onCancel, isSaving = false }: Question
     }
 
     const newQuestion: Question = {
-      id: question?.id || Date.now().toString(),
+      id: question?.id || crypto.randomUUID(),
       text: text.trim(),
       image: image || undefined,
       answerType,
@@ -70,7 +70,6 @@ const QuestionForm = ({ question, onSave, onCancel, isSaving = false }: Question
     };
 
     onSave(newQuestion);
-    toast.success('प्रश्न सहेजा गया!');
   };
 
   return (
