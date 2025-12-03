@@ -4,17 +4,28 @@ import { Question } from '@/types/question';
 import { getQuestions } from '@/lib/storage';
 import QuestionCard from '@/components/QuestionCard';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Settings, PartyPopper } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings, PartyPopper, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Index = () => {
   const navigate = useNavigate();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const loadedQuestions = getQuestions();
-    setQuestions(loadedQuestions);
+    const loadQuestions = async () => {
+      try {
+        const loadedQuestions = await getQuestions();
+        setQuestions(loadedQuestions);
+      } catch (error) {
+        console.error('Error loading questions:', error);
+        toast.error('प्रश्न लोड करने में त्रुटि');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadQuestions();
   }, []);
 
   const handleAnswer = (answer: string) => {
@@ -31,6 +42,14 @@ const Index = () => {
   const goToNext = () => {
     setCurrentIndex((prev) => (prev < questions.length - 1 ? prev + 1 : 0));
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center">
+        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (questions.length === 0) {
     return (

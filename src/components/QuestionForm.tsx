@@ -12,9 +12,10 @@ interface QuestionFormProps {
   question?: Question;
   onSave: (question: Question) => void;
   onCancel: () => void;
+  isSaving?: boolean;
 }
 
-const QuestionForm = ({ question, onSave, onCancel }: QuestionFormProps) => {
+const QuestionForm = ({ question, onSave, onCancel, isSaving = false }: QuestionFormProps) => {
   const [text, setText] = useState(question?.text || '');
   const [image, setImage] = useState(question?.image || '');
   const [answerType, setAnswerType] = useState<AnswerType>(question?.answerType || 'yesno');
@@ -184,8 +185,8 @@ const QuestionForm = ({ question, onSave, onCancel }: QuestionFormProps) => {
         </Tabs>
 
         <div className="flex gap-4 pt-4">
-          <Button type="submit" size="lg" className="flex-1 text-xl h-14">
-            सहेजें
+          <Button type="submit" size="lg" className="flex-1 text-xl h-14" disabled={isSaving}>
+            {isSaving ? 'सहेज रहे हैं...' : 'सहेजें'}
           </Button>
           <Button
             type="button"
@@ -193,6 +194,7 @@ const QuestionForm = ({ question, onSave, onCancel }: QuestionFormProps) => {
             size="lg"
             onClick={onCancel}
             className="flex-1 text-xl h-14"
+            disabled={isSaving}
           >
             रद्द करें
           </Button>
