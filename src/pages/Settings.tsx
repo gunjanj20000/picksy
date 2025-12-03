@@ -1,37 +1,78 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Question } from '@/types/question';
 import { getQuestions, addQuestion, updateQuestion, deleteQuestion } from '@/lib/storage';
 import QuestionForm from '@/components/QuestionForm';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Plus, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Settings = () => {
   const navigate = useNavigate();
-  const [questions, setQuestions] = useState<Question[]>(getQuestions());
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = (question: Question) => {
-    if (editingQuestion) {
-      updateQuestion(question.id, question);
-    } else {
-      addQuestion(question);
+  const loadQuestions = async () => {
+    try {
+      const loaded = await getQuestions();
+      setQuestions(loaded);
+    } catch (error) {
+      console.error('Error loading questions:', error);
+      toast.error('प्रश्न लोड करने में त्रुटि');
+    } finally {
+      setIsLoading(false);
     }
-    setQuestions(getQuestions());
-    setEditingQuestion(null);
-    setIsAdding(false);
   };
 
-  const handleDelete = (id: string) => {
+  useEffect(() => {
+    loadQuestions();
+  }, []);
+
+  const handleSave = async (question: Question) => {
+    setIsSaving(true);
+    try {
+      if (editingQuestion) {
+        await updateQuestion(question.id, question);
+        toast.success('प्रश्न अपडेट किया गया');
+      } else {
+        await addQuestion(question);
+        toast.success('प्रश्न जोड़ा गया');
+      }
+      await loadQuestions();
+      setEditingQuestion(null);
+      setIsAdding(false);
+    } catch (error) {
+      console.error('Error saving question:', error);
+      toast.error('प्रश्न सहेजने में त्रुटि');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
     if (confirm('क्या आप इस प्रश्न को हटाना चाहते हैं?')) {
-      deleteQuestion(id);
-      setQuestions(getQuestions());
-      toast.success('प्रश्न हटाया गया');
+      try {
+        await deleteQuestion(id);
+        await loadQuestions();
+        toast.success('प्रश्न हटाया गया');
+      } catch (error) {
+        console.error('Error deleting question:', error);
+        toast.error('प्रश्न हटाने में त्रुटि');
+      }
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center">
+        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (isAdding || editingQuestion) {
     return (
@@ -45,6 +86,7 @@ const Settings = () => {
               setEditingQuestion(null);
             }}
             className="text-lg"
+            disabled={isSaving}
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
             वापस जाएं
@@ -61,6 +103,7 @@ const Settings = () => {
               setIsAdding(false);
               setEditingQuestion(null);
             }}
+            isSaving={isSaving}
           />
         </div>
       </div>
