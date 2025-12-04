@@ -4,7 +4,7 @@ import { Question } from '@/types/question';
 import { getQuestions } from '@/lib/storage';
 import QuestionCard from '@/components/QuestionCard';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Settings, PartyPopper, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -30,11 +30,9 @@ const Index = () => {
     loadQuestions();
   }, []);
 
+  // ✅ Popup removed — now does nothing
   const handleAnswer = (answer: string) => {
-    toast.success(t('app.yes') + '!', {
-      icon: <PartyPopper className="w-6 h-6" />,
-      duration: 2000,
-    });
+    // popup removed
   };
 
   const goToPrevious = () => {
@@ -81,6 +79,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-[image:var(--gradient-bg)] p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
+
         {/* Header */}
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-3">
