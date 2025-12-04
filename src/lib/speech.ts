@@ -1,4 +1,4 @@
-export const speak = (text: string) => {
+export const speak = (text: string): SpeechSynthesisUtterance | null => {
   if ('speechSynthesis' in window) {
     // Cancel any ongoing speech
     window.speechSynthesis.cancel();
@@ -10,5 +10,7 @@ export const speak = (text: string) => {
     utterance.volume = 1;
     
     window.speechSynthesis.speak(utterance);
+    return utterance;
   }
+  return null;
 };

@@ -14,12 +14,23 @@ interface QuestionCardProps {
 const QuestionCard = ({ question, onAnswer }: QuestionCardProps) => {
   const { t, language } = useLanguage();
 
-  // NEW: selection animation state
+  // Selection animation state
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Image enlarge animation state
+  const [imageEnlarged, setImageEnlarged] = useState(false);
 
   useEffect(() => {
-    speak(question.text);
-    setSelectedId(null); // reset when question changes
+    setSelectedId(null);
+    setImageEnlarged(false);
+    
+    // Speak and then trigger image animation
+    const utterance = speak(question.text);
+    if (utterance) {
+      utterance.onend = () => setImageEnlarged(true);
+    } else {
+      // Fallback if speech not available
+      setTimeout(() => setImageEnlarged(true), 1500);
+    }
   }, [question.id, question.text]);
 
   const handleAnswer = (answer: string, id?: string) => {
@@ -59,8 +70,13 @@ const QuestionCard = ({ question, onAnswer }: QuestionCardProps) => {
         >
           {question.image && (
             <div
-              className="w-24 h-24 md:w-32 md:h-32 flex-shrink-0
-              rounded-xl overflow-hidden border-3 border-primary/30 shadow-[var(--shadow-soft)]"
+              className={`
+                flex-shrink-0 rounded-xl overflow-hidden border-3 shadow-[var(--shadow-soft)]
+                transition-all duration-700 ease-out
+                ${imageEnlarged 
+                  ? 'w-32 h-32 md:w-44 md:h-44 border-primary/50 shadow-[0_0_30px_5px_rgba(var(--primary),0.3)] scale-105 z-10' 
+                  : 'w-24 h-24 md:w-32 md:h-32 border-primary/30'}
+              `}
             >
               <img
                 src={question.image}
