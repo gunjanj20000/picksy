@@ -1,4 +1,5 @@
 export type AnswerType = 'yesno' | 'images';
+export type QuestionCategory = 'M' | 'E' | 'N' | string;
 
 export interface ImageAnswer {
   id: string;
@@ -12,4 +13,5 @@ export interface Question {
   image?: string;
   answerType: AnswerType;
   imageAnswers?: ImageAnswer[];
+  category: QuestionCategory;
 }

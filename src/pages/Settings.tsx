@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Question } from '@/types/question';
 import { getQuestions, addQuestion, updateQuestion, deleteQuestion } from '@/lib/storage';
@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Plus, Pencil, Trash2, Loader2, Languages, FileQuestion } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage, Language } from '@/contexts/LanguageContext';
@@ -20,6 +21,23 @@ const Settings = () => {
   const [isAdding, setIsAdding] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+
+  // Get custom categories from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('custom-categories');
+    if (saved) {
+      setCustomCategories(JSON.parse(saved));
+    }
+  }, []);
+
+  const handleAddCustomCategory = (category: string) => {
+    if (!customCategories.includes(category)) {
+      const updated = [...customCategories, category];
+      setCustomCategories(updated);
+      localStorage.setItem('custom-categories', JSON.stringify(updated));
+    }
+  };
 
   const loadQuestions = async () => {
     try {
@@ -114,6 +132,8 @@ const Settings = () => {
               setEditingQuestion(null);
             }}
             isSaving={isSaving}
+            customCategories={customCategories}
+            onAddCustomCategory={handleAddCustomCategory}
           />
         </div>
       </div>
@@ -184,7 +204,10 @@ const Settings = () => {
                           <span className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground font-bold text-lg">
                             {index + 1}
                           </span>
-                          <h3 className="text-2xl font-bold text-foreground line-clamp-2">
+                          <Badge variant="secondary" className="text-sm font-bold">
+                            {question.category}
+                          </Badge>
+                          <h3 className="text-2xl font-bold text-foreground line-clamp-2 flex-1">
                             {question.text}
                           </h3>
                         </div>

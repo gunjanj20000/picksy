@@ -45,6 +45,7 @@ const rowToQuestion = (row: any): Question => ({
   image: row.image || undefined,
   answerType: row.answer_type as 'yesno' | 'images',
   imageAnswers: row.image_answers as ImageAnswer[] || undefined,
+  category: row.category || 'M',
 });
 
 // Get all questions from Supabase
@@ -92,6 +93,7 @@ export const saveQuestion = async (question: Question): Promise<void> => {
         image: imageUrl,
         answer_type: question.answerType,
         image_answers: imageAnswers as any,
+        category: question.category,
       },
       { onConflict: 'id' }
     );
