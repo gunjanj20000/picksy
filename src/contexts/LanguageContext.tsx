@@ -54,6 +54,16 @@ const translations: Record<Language, Record<string, string>> = {
     'settings.selectLanguage': 'Select Language',
     'settings.languageChanged': 'Language changed',
     
+    // Categories
+    'category.label': 'Category',
+    'category.morning': 'Morning',
+    'category.evening': 'Evening',
+    'category.night': 'Night',
+    'category.custom': 'Custom',
+    'category.addCustom': 'Add Custom Category',
+    'category.all': 'All',
+    'category.selectCategory': 'Select Category',
+    
     // Question form
     'form.questionText': 'Question Text',
     'form.questionImage': 'Question Image (Optional)',
@@ -111,6 +121,16 @@ const translations: Record<Language, Record<string, string>> = {
     'settings.questions': 'प्रश्न',
     'settings.selectLanguage': 'भाषा चुनें',
     'settings.languageChanged': 'भाषा बदली गई',
+    
+    // Categories
+    'category.label': 'श्रेणी',
+    'category.morning': 'सुबह',
+    'category.evening': 'शाम',
+    'category.night': 'रात',
+    'category.custom': 'कस्टम',
+    'category.addCustom': 'कस्टम श्रेणी जोड़ें',
+    'category.all': 'सभी',
+    'category.selectCategory': 'श्रेणी चुनें',
     
     // Question form
     'form.questionText': 'प्रश्न टेक्स्ट',

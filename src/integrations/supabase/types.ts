@@ -17,6 +17,7 @@ export type Database = {
       questions: {
         Row: {
           answer_type: string
+          category: string
           created_at: string
           id: string
           image: string | null
@@ -26,6 +27,7 @@ export type Database = {
         }
         Insert: {
           answer_type: string
+          category?: string
           created_at?: string
           id?: string
           image?: string | null
@@ -35,6 +37,7 @@ export type Database = {
         }
         Update: {
           answer_type?: string
+          category?: string
           created_at?: string
           id?: string
           image?: string | null

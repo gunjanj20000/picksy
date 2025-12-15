@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Question } from '@/types/question';
+import { Question, QuestionCategory } from '@/types/question';
 import { getQuestions } from '@/lib/storage';
 import QuestionCard from '@/components/QuestionCard';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronLeft, ChevronRight, Settings, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -14,6 +15,25 @@ const Index = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+
+  // Get unique custom categories from questions
+  const customCategories = useMemo(() => {
+    const defaultCategories = ['M', 'E', 'N'];
+    const allCategories = questions.map(q => q.category);
+    return [...new Set(allCategories.filter(c => !defaultCategories.includes(c)))];
+  }, [questions]);
+
+  // Filter questions by selected category
+  const filteredQuestions = useMemo(() => {
+    if (selectedCategory === 'all') return questions;
+    return questions.filter(q => q.category === selectedCategory);
+  }, [questions, selectedCategory]);
+
+  // Reset index when category changes
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [selectedCategory]);
 
   useEffect(() => {
     const loadQuestions = async () => {
@@ -36,11 +56,11 @@ const Index = () => {
   };
 
   const goToPrevious = () => {
-    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : questions.length - 1));
+    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : filteredQuestions.length - 1));
   };
 
   const goToNext = () => {
-    setCurrentIndex((prev) => (prev < questions.length - 1 ? prev + 1 : 0));
+    setCurrentIndex((prev) => (prev < filteredQuestions.length - 1 ? prev + 1 : 0));
   };
 
   if (isLoading) {
@@ -74,22 +94,79 @@ const Index = () => {
     );
   }
 
-  const currentQuestion = questions[currentIndex];
+  if (filteredQuestions.length === 0) {
+    return (
+      <div className="min-h-screen bg-[image:var(--gradient-bg)] p-4 md:p-8">
+        <div className="max-w-7xl mx-auto space-y-6">
+          {/* Header with category filter */}
+          <div className="flex justify-between items-center gap-4">
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-24 h-12 text-lg font-bold">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-background border shadow-lg z-50">
+                <SelectItem value="all" className="text-lg">{t('category.all')}</SelectItem>
+                <SelectItem value="M" className="text-lg">M</SelectItem>
+                <SelectItem value="E" className="text-lg">E</SelectItem>
+                <SelectItem value="N" className="text-lg">N</SelectItem>
+                {customCategories.map((cat) => (
+                  <SelectItem key={cat} value={cat} className="text-lg">{cat}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => navigate('/settings')}
+              className="text-lg md:text-xl h-12 md:h-14"
+            >
+              <Settings className="w-6 h-6 mr-2" />
+              {t('app.settings')}
+            </Button>
+          </div>
+          <div className="text-center py-20">
+            <p className="text-2xl text-muted-foreground">{t('app.noQuestions')}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const currentQuestion = filteredQuestions[currentIndex];
 
   return (
     <div className="min-h-screen bg-[image:var(--gradient-bg)] p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
 
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center gap-4">
+          {/* Category Dropdown */}
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-24 h-12 text-lg font-bold">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-background border shadow-lg z-50">
+              <SelectItem value="all" className="text-lg">{t('category.all')}</SelectItem>
+              <SelectItem value="M" className="text-lg">M</SelectItem>
+              <SelectItem value="E" className="text-lg">E</SelectItem>
+              <SelectItem value="N" className="text-lg">N</SelectItem>
+              {customCategories.map((cat) => (
+                <SelectItem key={cat} value={cat} className="text-lg">{cat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Question Counter */}
           <div className="flex items-center gap-3">
             <div className="bg-primary text-primary-foreground rounded-full w-12 h-12 md:w-16 md:h-16 flex items-center justify-center text-xl md:text-2xl font-bold">
               {currentIndex + 1}
             </div>
             <span className="text-2xl md:text-3xl text-muted-foreground font-semibold">
-              / {questions.length}
+              / {filteredQuestions.length}
             </span>
           </div>
+
+          {/* Settings Button */}
           <Button
             variant="outline"
             size="lg"
@@ -97,13 +174,13 @@ const Index = () => {
             className="text-lg md:text-xl h-12 md:h-14"
           >
             <Settings className="w-6 h-6 mr-2" />
-            {t('app.settings')}
+            <span className="hidden md:inline">{t('app.settings')}</span>
           </Button>
         </div>
 
         {/* Question Card */}
         <div className="flex items-center justify-center gap-4">
-          {questions.length > 1 && (
+          {filteredQuestions.length > 1 && (
             <Button
               variant="outline"
               size="lg"
@@ -118,7 +195,7 @@ const Index = () => {
             <QuestionCard question={currentQuestion} onAnswer={handleAnswer} />
           </div>
 
-          {questions.length > 1 && (
+          {filteredQuestions.length > 1 && (
             <Button
               variant="outline"
               size="lg"
@@ -131,7 +208,7 @@ const Index = () => {
         </div>
 
         {/* Mobile Navigation */}
-        {questions.length > 1 && (
+        {filteredQuestions.length > 1 && (
           <div className="flex gap-4 md:hidden">
             <Button
               variant="outline"
