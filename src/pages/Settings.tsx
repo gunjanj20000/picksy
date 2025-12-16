@@ -68,9 +68,9 @@ const Settings = () => {
       await loadQuestions();
       setEditingQuestion(null);
       setIsAdding(false);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving question:', error);
-      toast.error(error?.message || t('settings.errorSaving'));
+      toast.error(t('settings.errorSaving'));
     } finally {
       setIsSaving(false);
     }
@@ -82,9 +82,9 @@ const Settings = () => {
         await deleteQuestion(id);
         await loadQuestions();
         toast.success(t('settings.questionDeleted'));
-      } catch (error: any) {
+      } catch (error) {
         console.error('Error deleting question:', error);
-        toast.error(error?.message || t('settings.errorDeleting'));
+        toast.error(t('settings.errorDeleting'));
       }
     }
   };
