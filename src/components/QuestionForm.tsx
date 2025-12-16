@@ -6,9 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Plus, Trash2, Crop } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
+import ImageCropper from './ImageCropper';
 
 interface QuestionFormProps {
   question?: Question;
@@ -20,7 +21,7 @@ interface QuestionFormProps {
 }
 
 const QuestionForm = ({ question, onSave, onCancel, isSaving = false, customCategories = [], onAddCustomCategory }: QuestionFormProps) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [text, setText] = useState(question?.text || '');
   const [image, setImage] = useState(question?.image || '');
   const [answerType, setAnswerType] = useState<AnswerType>(question?.answerType || 'yesno');
@@ -30,13 +31,30 @@ const QuestionForm = ({ question, onSave, onCancel, isSaving = false, customCate
   const [imageAnswers, setImageAnswers] = useState<ImageAnswer[]>(
     question?.imageAnswers || [{ id: crypto.randomUUID(), image: '', text: '' }]
   );
+  
+  // Cropping state
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string>('');
+  const [cropTarget, setCropTarget] = useState<'main' | string>('main');
 
-  const handleImageUpload = (file: File, setter: (url: string) => void) => {
+  const handleImageUpload = (file: File, target: 'main' | string) => {
     const reader = new FileReader();
     reader.onloadend = () => {
-      setter(reader.result as string);
+      setImageToCrop(reader.result as string);
+      setCropTarget(target);
+      setCropperOpen(true);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = (croppedImageUrl: string) => {
+    if (cropTarget === 'main') {
+      setImage(croppedImageUrl);
+    } else {
+      updateImageAnswer(cropTarget, 'image', croppedImageUrl);
+    }
+    setCropperOpen(false);
+    setImageToCrop('');
   };
 
   const addImageAnswer = () => {
@@ -156,13 +174,24 @@ const QuestionForm = ({ question, onSave, onCancel, isSaving = false, customCate
               accept="image/*"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) handleImageUpload(file, setImage);
+                if (file) handleImageUpload(file, 'main');
               }}
               className="flex-1"
             />
             {image && (
-              <div className="w-20 h-20 rounded-lg overflow-hidden border-2">
+              <div className="w-20 h-20 rounded-lg overflow-hidden border-2 relative group">
                 <img src={image} alt="Preview" className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImageToCrop(image);
+                    setCropTarget('main');
+                    setCropperOpen(true);
+                  }}
+                  className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                >
+                  <Crop className="w-6 h-6 text-white" />
+                </button>
               </div>
             )}
           </div>
@@ -211,20 +240,29 @@ const QuestionForm = ({ question, onSave, onCancel, isSaving = false, customCate
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
-                        handleImageUpload(file, (url) =>
-                          updateImageAnswer(answer.id, 'image', url)
-                        );
+                        handleImageUpload(file, answer.id);
                       }
                     }}
                     className="flex-1"
                   />
                   {answer.image && (
-                    <div className="w-16 h-16 rounded-lg overflow-hidden border-2">
+                    <div className="w-16 h-16 rounded-lg overflow-hidden border-2 relative group">
                       <img
                         src={answer.image}
                         alt="Preview"
                         className="w-full h-full object-cover"
                       />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImageToCrop(answer.image);
+                          setCropTarget(answer.id);
+                          setCropperOpen(true);
+                        }}
+                        className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                      >
+                        <Crop className="w-5 h-5 text-white" />
+                      </button>
                     </div>
                   )}
                 </div>
@@ -259,6 +297,16 @@ const QuestionForm = ({ question, onSave, onCancel, isSaving = false, customCate
           </Button>
         </div>
       </form>
+
+      <ImageCropper
+        imageSrc={imageToCrop}
+        open={cropperOpen}
+        onCropComplete={handleCropComplete}
+        onCancel={() => {
+          setCropperOpen(false);
+          setImageToCrop('');
+        }}
+      />
     </Card>
   );
 };

@@ -39,6 +39,11 @@ const QuestionCard = ({ question, onAnswer }: QuestionCardProps) => {
     onAnswer(answer);
   };
 
+  const handleListenAgain = () => {
+    setSelectedId(null); // Reset selection to enable all buttons again
+    speak(question.text);
+  };
+
   const listenAgainText = language === "hi" ? "फिर से सुनें" : "Listen again";
 
   /* AUTO COLUMN LOGIC */
@@ -94,7 +99,7 @@ const QuestionCard = ({ question, onAnswer }: QuestionCardProps) => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => speak(question.text)}
+              onClick={handleListenAgain}
               className="text-primary hover:text-primary hover:bg-primary/10 h-8 md:h-10"
             >
               <Volume2 className="w-5 h-5 md:w-6 md:h-6 mr-1 md:mr-2" />
@@ -117,6 +122,7 @@ const QuestionCard = ({ question, onAnswer }: QuestionCardProps) => {
                 variant="default"
                 size="lg"
                 onClick={() => handleAnswer(t("app.yes"), "yes")}
+                disabled={selectedId !== null && selectedId !== "yes"}
                 className={`
                   flex-1 max-w-md h-28 md:h-36 lg:h-40 
                   text-3xl md:text-5xl lg:text-6xl font-bold
@@ -127,6 +133,8 @@ const QuestionCard = ({ question, onAnswer }: QuestionCardProps) => {
                   ${
                     selectedId === "yes"
                       ? "scale-110 z-20 border-4 border-primary shadow-[0_0_25px_5px_rgba(0,150,255,0.7)] animate-pulse"
+                      : selectedId !== null
+                      ? "opacity-40 grayscale cursor-not-allowed"
                       : "hover:scale-105"
                   }
                 `}
@@ -140,6 +148,7 @@ const QuestionCard = ({ question, onAnswer }: QuestionCardProps) => {
                 variant="default"
                 size="lg"
                 onClick={() => handleAnswer(t("app.no"), "no")}
+                disabled={selectedId !== null && selectedId !== "no"}
                 className={`
                   flex-1 max-w-md h-28 md:h-36 lg:h-40
                   text-3xl md:text-5xl lg:text-6xl font-bold
@@ -150,6 +159,8 @@ const QuestionCard = ({ question, onAnswer }: QuestionCardProps) => {
                   ${
                     selectedId === "no"
                       ? "scale-110 z-20 border-4 border-primary shadow-[0_0_25px_5px_rgba(0,150,255,0.7)] animate-pulse"
+                      : selectedId !== null
+                      ? "opacity-40 grayscale cursor-not-allowed"
                       : "hover:scale-105"
                   }
                 `}
@@ -167,6 +178,7 @@ const QuestionCard = ({ question, onAnswer }: QuestionCardProps) => {
                   key={answer.id}
                   variant="outline"
                   onClick={() => handleAnswer(answer.text, answer.id)}
+                  disabled={selectedId !== null && selectedId !== answer.id}
                   className={`
                     h-64 md:h-72 lg:h-80
                     landscape:h-[45vh]
@@ -176,6 +188,8 @@ const QuestionCard = ({ question, onAnswer }: QuestionCardProps) => {
                     ${
                       selectedId === answer.id
                         ? "scale-110 z-20 border-4 border-primary shadow-[0_0_25px_5px_rgba(0,150,255,0.7)] animate-pulse"
+                        : selectedId !== null
+                        ? "opacity-40 grayscale cursor-not-allowed"
                         : "hover:scale-105 border-border"
                     }
                   `}

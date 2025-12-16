@@ -53,7 +53,7 @@ export const getQuestions = async (): Promise<Question[]> => {
   const { data, error } = await supabase
     .from('questions')
     .select('*')
-    .order('created_at', { ascending: true });
+    .order('created_at', { ascending: false });
 
   if (error) {
     console.error('Error fetching questions:', error);
