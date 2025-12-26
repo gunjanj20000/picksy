@@ -55,6 +55,82 @@ const Index = () => {
     // popup removed
   };
 
+  const AppBar = () => (
+    <header className="sticky top-2 z-30">
+      <div className="flex items-center justify-between rounded-3xl border border-white/10 bg-gradient-to-r from-fuchsia-500/70 via-indigo-500/70 to-emerald-400/70 px-4 py-3 shadow-xl shadow-fuchsia-500/25 backdrop-blur-xl transition hover:shadow-2xl hover:shadow-indigo-500/30 md:px-6">
+        <div className="flex items-center gap-3 text-white">
+          <div className="relative -mt-2 flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 text-lg font-black uppercase tracking-[0.14em] shadow-inner shadow-black/30">
+            Q
+          </div>
+          <span className="text-xl md:text-2xl font-semibold">Qapp</span>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-11 w-11 rounded-full border border-white/60 bg-white/20 text-white shadow-sm shadow-black/20 hover:border-white hover:bg-white/30"
+          onClick={() => navigate('/settings')}
+          aria-label={t('app.settings')}
+        >
+          <Settings className="h-5 w-5" />
+        </Button>
+      </div>
+    </header>
+  );
+
+  const TopControls = ({ showCounter }: { showCounter: boolean }) => {
+    const position = showCounter && filteredQuestions.length > 0 ? currentIndex + 1 : 0;
+    const total = showCounter ? filteredQuestions.length : 0;
+
+    const handlePositionChange = (value: string) => {
+      const nextIndex = Number(value) - 1;
+      if (!Number.isNaN(nextIndex)) {
+        setCurrentIndex(nextIndex);
+      }
+    };
+
+    return (
+      <div className="flex items-center justify-between gap-3">
+        <div className="rounded-2xl border border-white/10 bg-white/80 px-3 py-2 shadow-lg shadow-indigo-500/10 backdrop-blur-xl dark:bg-black/60">
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="h-10 w-24 rounded-lg border-none bg-gradient-to-r from-sky-100 via-emerald-100 to-amber-100 text-sm font-semibold text-foreground shadow-inner shadow-white/40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-background border shadow-lg z-50">
+              <SelectItem value="all" className="text-sm">{t('category.all')}</SelectItem>
+              <SelectItem value="M" className="text-sm">M</SelectItem>
+              <SelectItem value="E" className="text-sm">E</SelectItem>
+              <SelectItem value="N" className="text-sm">N</SelectItem>
+              {customCategories.map((cat) => (
+                <SelectItem key={cat} value={cat} className="text-sm">{cat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {showCounter && (
+          <div className="ml-auto rounded-2xl border border-white/10 bg-white/80 px-3 py-2 shadow-lg shadow-indigo-500/10 backdrop-blur-xl dark:bg-black/60">
+            <Select
+              value={position > 0 ? String(position) : ''}
+              onValueChange={handlePositionChange}
+              disabled={total === 0}
+            >
+              <SelectTrigger className="h-10 w-28 rounded-lg border border-indigo-100 bg-white text-sm font-semibold text-foreground shadow-sm">
+                <SelectValue placeholder={`0 / ${total}`} />
+              </SelectTrigger>
+              <SelectContent className="bg-background border shadow-lg z-50">
+                {Array.from({ length: total }, (_, idx) => idx + 1).map((num) => (
+                  <SelectItem key={num} value={String(num)} className="text-sm">
+                    {num} / {total}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const goToPrevious = () => {
     setCurrentIndex((prev) => (prev > 0 ? prev - 1 : filteredQuestions.length - 1));
   };
@@ -65,30 +141,40 @@ const Index = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center">
-        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+      <div className="min-h-screen bg-[image:var(--gradient-bg)] p-4 md:p-8">
+        <div className="max-w-7xl mx-auto space-y-8">
+          <AppBar />
+          <div className="flex items-center justify-center py-24">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          </div>
+        </div>
       </div>
     );
   }
 
   if (questions.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
-        <div className="text-center space-y-6">
-          <h1 className="text-4xl md:text-6xl font-bold text-foreground">
-            {t('app.noQuestions')}
-          </h1>
-          <p className="text-2xl text-muted-foreground">
-            {t('app.addQuestionsFirst')}
-          </p>
-          <Button
-            size="lg"
-            onClick={() => navigate('/settings')}
-            className="text-2xl h-16 px-8"
-          >
-            <Settings className="w-8 h-8 mr-3" />
-            {t('app.goToSettings')}
-          </Button>
+      <div className="min-h-screen bg-[image:var(--gradient-bg)] p-4 md:p-8">
+        <div className="max-w-7xl mx-auto space-y-10">
+          <AppBar />
+          <div className="flex items-center justify-center">
+            <div className="space-y-6 text-center rounded-3xl border border-white/10 bg-white/70 p-10 shadow-xl shadow-primary/15 backdrop-blur-xl dark:bg-black/60">
+              <h1 className="text-4xl md:text-5xl font-bold text-foreground">
+                {t('app.noQuestions')}
+              </h1>
+              <p className="text-2xl text-muted-foreground">
+                {t('app.addQuestionsFirst')}
+              </p>
+              <Button
+                size="lg"
+                onClick={() => navigate('/settings')}
+                className="h-16 px-8 text-2xl"
+              >
+                <Settings className="mr-3 h-8 w-8" />
+                {t('app.goToSettings')}
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -97,33 +183,9 @@ const Index = () => {
   if (filteredQuestions.length === 0) {
     return (
       <div className="min-h-screen bg-[image:var(--gradient-bg)] p-4 md:p-8">
-        <div className="max-w-7xl mx-auto space-y-6">
-          {/* Header with category filter */}
-          <div className="flex justify-between items-center gap-4">
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-24 h-12 text-lg font-bold">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-background border shadow-lg z-50">
-                <SelectItem value="all" className="text-lg">{t('category.all')}</SelectItem>
-                <SelectItem value="M" className="text-lg">M</SelectItem>
-                <SelectItem value="E" className="text-lg">E</SelectItem>
-                <SelectItem value="N" className="text-lg">N</SelectItem>
-                {customCategories.map((cat) => (
-                  <SelectItem key={cat} value={cat} className="text-lg">{cat}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => navigate('/settings')}
-              className="text-lg md:text-xl h-12 md:h-14"
-            >
-              <Settings className="w-6 h-6 mr-2" />
-              {t('app.settings')}
-            </Button>
-          </div>
+        <div className="max-w-7xl mx-auto space-y-8">
+          <AppBar />
+          <TopControls showCounter={true} />
           <div className="text-center py-20">
             <p className="text-2xl text-muted-foreground">{t('app.noQuestions')}</p>
           </div>
@@ -136,47 +198,9 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-[image:var(--gradient-bg)] p-4 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-8">
 
-        {/* Header */}
-        <div className="flex justify-between items-center gap-4">
-          {/* Category Dropdown */}
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-24 h-12 text-lg font-bold">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-background border shadow-lg z-50">
-              <SelectItem value="all" className="text-lg">{t('category.all')}</SelectItem>
-              <SelectItem value="M" className="text-lg">M</SelectItem>
-              <SelectItem value="E" className="text-lg">E</SelectItem>
-              <SelectItem value="N" className="text-lg">N</SelectItem>
-              {customCategories.map((cat) => (
-                <SelectItem key={cat} value={cat} className="text-lg">{cat}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Question Counter */}
-          <div className="flex items-center gap-3">
-            <div className="bg-primary text-primary-foreground rounded-full w-12 h-12 md:w-16 md:h-16 flex items-center justify-center text-xl md:text-2xl font-bold">
-              {currentIndex + 1}
-            </div>
-            <span className="text-2xl md:text-3xl text-muted-foreground font-semibold">
-              / {filteredQuestions.length}
-            </span>
-          </div>
-
-          {/* Settings Button */}
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={() => navigate('/settings')}
-            className="text-lg md:text-xl h-12 md:h-14"
-          >
-            <Settings className="w-6 h-6 mr-2" />
-            <span className="hidden md:inline">{t('app.settings')}</span>
-          </Button>
-        </div>
+        <AppBar />
 
         {/* Question Card */}
         <div className="flex items-center justify-center gap-4">
@@ -230,6 +254,8 @@ const Index = () => {
             </Button>
           </div>
         )}
+
+        <TopControls showCounter={true} />
       </div>
     </div>
   );
