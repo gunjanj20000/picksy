@@ -1,30 +1,54 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
+export default defineConfig({
   server: {
     host: "::",
     port: 8080,
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-ui': [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-select',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-slot',
+            '@radix-ui/react-switch',
+            '@radix-ui/react-slider',
+            '@radix-ui/react-radio-group',
+            '@radix-ui/react-progress',
+          ],
+          'vendor-icons': ['lucide-react'],
+        },
+      },
+    },
+  },
   plugins: [
     react(),
-    mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "pwa-icon-192.png", "pwa-icon-512.png"],
+      includeAssets: [
+        "favicon.ico",
+        "placeholder.svg",
+        "pwa-icon-192.png",
+        "pwa-icon-512.png"
+      ],
       manifest: {
-        name: "सीखने का ऐप - Learning App",
-        short_name: "Learning App",
-        description: "Interactive Hindi learning app with visual answers and text-to-speech for children",
-        theme_color: "#f97316",
-        background_color: "#fef7ed",
+        name: "Qapp - Playful Learning & Assessment",
+        short_name: "Qapp",
+        description: "100% offline interactive child learning and routine assessment app with speech and visual answers",
+        theme_color: "#7c3aed",
+        background_color: "#fdf4ff",
         display: "standalone",
-        orientation: "portrait",
+        orientation: "any",
         start_url: "/",
+        scope: "/",
         icons: [
           {
             src: "/pwa-icon-192.png",
@@ -38,32 +62,19 @@ export default defineConfig(({ mode }) => ({
             type: "image/png",
             purpose: "any maskable"
           }
-        ]
+        ],
+        categories: ["education", "kids", "learning"]
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "supabase-cache",
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 // 24 hours
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          }
-        ]
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,webmanifest}"],
+        navigateFallback: "/index.html",
+        cleanupOutdatedCaches: true
       }
     })
-  ].filter(Boolean),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-}));
+});

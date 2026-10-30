@@ -1,73 +1,77 @@
-# Welcome to your Lovable project
+# Qapp - 100% Offline Progressive Web App (PWA)
 
-## Project info
+A vibrant, playful, and accessible child learning and routine assessment app designed for high tactile engagement, visual feedback, and text-to-speech interaction.
 
-**URL**: https://lovable.dev/projects/b89e38a8-e246-4aca-bee0-d8d5d4c1cec2
+---
 
-## How can I edit this code?
+## ✨ Highlights & Features
 
-There are several ways of editing your application.
+- **📱 100% Offline Progressive Web App (PWA)**:
+  - Powered by `vite-plugin-pwa` and Service Worker Workbox precaching.
+  - Installable directly to the home screen on Android, iOS, iPadOS, macOS, Windows, and Linux.
+  - No internet connection required after first load.
+- **🚫 Completely Free of Supabase & Cloud Dependencies**:
+  - Replaced cloud database and remote storage with high-capacity local **IndexedDB** (`picksy_offline_db`).
+  - Seamless localStorage fallback.
+  - Fast, private, and resilient offline persistence for custom questions, routines, and images.
+- **🎨 Vibrant, Playful & Accessible Design**:
+  - High-energy gradients (electric purple, radiant berry, emerald green, sunshine amber).
+  - Glassmorphic translucent cards with glowing highlights and smooth rounded corners.
+  - Bouncy 3D tactile buttons optimized for children, seniors, and touch screens.
+  - Confetti celebrations (`canvas-confetti`) when completing questions and earning stars.
+- **🔊 Sound & Text-to-Speech (TTS)**:
+  - Zero-latency Web Audio API synthesizer for playful pops, chimes, dings, and fanfare.
+  - Bilingual text-to-speech (Hindi & English) with customizable speed (rate) and voice pitch.
+  - Animated sound wave equalizer during audio playback.
+  - Quick mute/unmute toggle in the top bar.
+- **📋 Supported Question Formats**:
+  1. **Yes / No**: Extra-large bouncy emerald and crimson action buttons with smiling feedback.
+  2. **Right or Wrong (ROR)**: Dual side-by-side comparison cards with custom or glowing check/cross badges.
+  3. **Visual Image Choices**: Multi-option picture cards (1 to 4+) with bold captions and animated glows.
+- **🌅 Daily Routine Categories**:
+  - 🌅 Morning Routine (M)
+  - 🌇 Evening Routine (E)
+  - 🌙 Night Routine (N)
+  - 🎨 Custom categories with instant tags.
+- **💾 Backup & Data Portability**:
+  - One-click JSON backup export with offline images and questions.
+  - JSON backup restore/import.
+  - Reset to default starter pack with built-in illustrated routine questions.
+- **✂️ Offline Image Cropper & Preset Stickers**:
+  - Interactive canvas cropper with 1:1 aspect ratio.
+  - Built-in library of SVG routine stickers (toothbrush, milk, fruits, bed, ball, bicycle, drawing, etc.).
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/b89e38a8-e246-4aca-bee0-d8d5d4c1cec2) and start prompting.
+## 🚀 Getting Started
 
-Changes made via Lovable will be committed automatically to this repo.
+### Prerequisites
+- Node.js (v20+ recommended)
+- npm or bun
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+### Installation & Run
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Install dependencies
+npm install
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start local development server
 npm run dev
+
+# Build production offline PWA
+npm run build
+
+# Preview production build locally
+npm run preview
 ```
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🛠 Tech Stack
 
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/b89e38a8-e246-4aca-bee0-d8d5d4c1cec2) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- **Framework**: React 18 + TypeScript + Vite
+- **Offline Storage**: IndexedDB + localStorage fallback
+- **Styling**: Tailwind CSS + Shadcn UI + Lucide Icons
+- **PWA**: `vite-plugin-pwa` + Workbox Service Worker
+- **Audio & FX**: Web Audio API Synthesizer + Web Speech API + `canvas-confetti`
+- **Image Editing**: `react-image-crop` + HTML5 Canvas

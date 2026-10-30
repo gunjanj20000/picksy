@@ -1,15 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Question, AnswerType, ImageAnswer, QuestionCategory, RightWrongImages } from '@/types/question';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2, Crop } from 'lucide-react';
+import { Plus, Trash2, Crop, Upload, Volume2, Sparkles, Check, X, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { speak } from '@/lib/speech';
 import ImageCropper from './ImageCropper';
+import { PRESET_STICKERS } from '@/lib/presetStickers';
+import { SVG_ICONS } from '@/lib/seedData';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface QuestionFormProps {
   question?: Question;
@@ -21,43 +24,54 @@ interface QuestionFormProps {
   template?: 'default' | 'ror';
 }
 
-const QuestionForm = ({ question, onSave, onCancel, isSaving = false, customCategories = [], onAddCustomCategory, template }: QuestionFormProps) => {
+const QuestionForm = ({
+  question,
+  onSave,
+  onCancel,
+  isSaving = false,
+  customCategories = [],
+  onAddCustomCategory,
+  template,
+}: QuestionFormProps) => {
   const { t, language } = useLanguage();
+
   const [text, setText] = useState(question?.text || '');
   const [image, setImage] = useState(question?.image || '');
-  const [answerType, setAnswerType] = useState<AnswerType>(question?.answerType || 'yesno');
+  const [answerType, setAnswerType] = useState<AnswerType>(
+    question?.answerType || (template === 'ror' ? 'rightwrong' : 'yesno')
+  );
   const [category, setCategory] = useState<QuestionCategory>(question?.category || 'M');
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [customCategory, setCustomCategory] = useState('');
+
   const [imageAnswers, setImageAnswers] = useState<ImageAnswer[]>(
-    question?.imageAnswers || [{ id: crypto.randomUUID(), image: '', text: '' }]
+    question?.imageAnswers && question.imageAnswers.length > 0
+      ? question.imageAnswers
+      : [
+          { id: crypto.randomUUID(), image: '', text: '' },
+          { id: crypto.randomUUID(), image: '', text: '' },
+        ]
   );
-  // Default high-quality icons for right/wrong answers
-  const defaultRightIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%232ed573'/%3E%3Cstop offset='100%25' stop-color='%2316a34a'/%3E%3C/linearGradient%3E%3Cfilter id='shadow' x='-20%25' y='-20%25' width='140%25' height='140%25'%3E%3CfeDropShadow dx='0' dy='6' stdDeviation='12' flood-color='%23000000' flood-opacity='0.25'/%3E%3C/filter%3E%3C/defs%3E%3Ccircle cx='256' cy='256' r='220' fill='url(%23g)' filter='url(%23shadow)'/%3E%3Cpath d='M164 266 L228 330 L352 196' fill='none' stroke='white' stroke-width='40' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E";
-  const defaultWrongIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='r' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23f87171'/%3E%3Cstop offset='100%25' stop-color='%23dc2626'/%3E%3C/linearGradient%3E%3Cfilter id='shadow' x='-20%25' y='-20%25' width='140%25' height='140%25'%3E%3CfeDropShadow dx='0' dy='6' stdDeviation='12' flood-color='%23000000' flood-opacity='0.25'/%3E%3C/filter%3E%3C/defs%3E%3Ccircle cx='256' cy='256' r='220' fill='url(%23r)' filter='url(%23shadow)'/%3E%3Cpath d='M180 180 L332 332 M332 180 L180 332' fill='none' stroke='white' stroke-width='40' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E";
 
-  const initialRightWrongImages: RightWrongImages = question?.rightWrongImages
-    ? {
-        image1: question.rightWrongImages.image1 || '',
-        image2: question.rightWrongImages.image2 || '',
-        rightIcon: question.rightWrongImages.rightIcon || defaultRightIcon,
-        wrongIcon: question.rightWrongImages.wrongIcon || defaultWrongIcon,
-      }
-    : {
-        image1: '',
-        image2: '',
-        rightIcon: defaultRightIcon,
-        wrongIcon: defaultWrongIcon,
-      };
+  const [rightWrongImages, setRightWrongImages] = useState<RightWrongImages>(
+    question?.rightWrongImages || {
+      image1: '',
+      image2: '',
+      rightIcon: SVG_ICONS.defaultRight,
+      wrongIcon: SVG_ICONS.defaultWrong,
+    }
+  );
 
-  const [rightWrongImages, setRightWrongImages] = useState<RightWrongImages>(initialRightWrongImages);
-  
   // Cropping state
   const [cropperOpen, setCropperOpen] = useState(false);
   const [imageToCrop, setImageToCrop] = useState<string>('');
   const [cropTarget, setCropTarget] = useState<'main' | 'rw1' | 'rw2' | 'rwRight' | 'rwWrong' | string>('main');
 
-  const handleImageUpload = (file: File, target: 'main' | 'rw1' | 'rw2' | 'rwRight' | 'rwWrong' | string) => {
+  // Sticker Picker Modal state
+  const [stickerPickerOpen, setStickerPickerOpen] = useState(false);
+  const [stickerTarget, setStickerTarget] = useState<'main' | 'rw1' | 'rw2' | 'rwRight' | 'rwWrong' | string>('main');
+
+  const handleFileUpload = (file: File, target: string) => {
     const reader = new FileReader();
     reader.onloadend = () => {
       setImageToCrop(reader.result as string);
@@ -67,38 +81,52 @@ const QuestionForm = ({ question, onSave, onCancel, isSaving = false, customCate
     reader.readAsDataURL(file);
   };
 
-  const handleCropComplete = (croppedImageUrl: string) => {
-    if (cropTarget === 'main') {
-      setImage(croppedImageUrl);
-    } else if (cropTarget === 'rw1') {
-      setRightWrongImages({ ...rightWrongImages, image1: croppedImageUrl });
-    } else if (cropTarget === 'rw2') {
-      setRightWrongImages({ ...rightWrongImages, image2: croppedImageUrl });
-    } else if (cropTarget === 'rwRight') {
-      setRightWrongImages({ ...rightWrongImages, rightIcon: croppedImageUrl });
-    } else if (cropTarget === 'rwWrong') {
-      setRightWrongImages({ ...rightWrongImages, wrongIcon: croppedImageUrl });
+  const applyImageToTarget = (target: string, imageUrl: string) => {
+    if (target === 'main') {
+      setImage(imageUrl);
+    } else if (target === 'rw1') {
+      setRightWrongImages((prev) => ({ ...prev, image1: imageUrl }));
+    } else if (target === 'rw2') {
+      setRightWrongImages((prev) => ({ ...prev, image2: imageUrl }));
+    } else if (target === 'rwRight') {
+      setRightWrongImages((prev) => ({ ...prev, rightIcon: imageUrl }));
+    } else if (target === 'rwWrong') {
+      setRightWrongImages((prev) => ({ ...prev, wrongIcon: imageUrl }));
     } else {
-      updateImageAnswer(cropTarget, 'image', croppedImageUrl);
+      updateImageAnswer(target, 'image', imageUrl);
     }
+  };
+
+  const handleCropComplete = (croppedUrl: string) => {
+    applyImageToTarget(cropTarget, croppedUrl);
     setCropperOpen(false);
     setImageToCrop('');
   };
 
+  const openStickerPicker = (target: string) => {
+    setStickerTarget(target);
+    setStickerPickerOpen(true);
+  };
+
+  const selectSticker = (svgData: string) => {
+    applyImageToTarget(stickerTarget, svgData);
+    setStickerPickerOpen(false);
+  };
+
   const addImageAnswer = () => {
-    setImageAnswers([
-      ...imageAnswers,
+    setImageAnswers((prev) => [
+      ...prev,
       { id: crypto.randomUUID(), image: '', text: '' },
     ]);
   };
 
   const removeImageAnswer = (id: string) => {
-    setImageAnswers(imageAnswers.filter(a => a.id !== id));
+    setImageAnswers((prev) => prev.filter((a) => a.id !== id));
   };
 
   const updateImageAnswer = (id: string, field: 'image' | 'text', value: string) => {
-    setImageAnswers(
-      imageAnswers.map(a => (a.id === id ? { ...a, [field]: value } : a))
+    setImageAnswers((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, [field]: value } : a))
     );
   };
 
@@ -111,9 +139,17 @@ const QuestionForm = ({ question, onSave, onCancel, isSaving = false, customCate
     }
   };
 
+  const handleTestTTS = () => {
+    if (!text.trim()) {
+      toast.error(t('form.enterQuestion'));
+      return;
+    }
+    speak(text.trim(), { lang: language });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!text.trim()) {
       toast.error(t('form.enterQuestion'));
       return;
@@ -124,8 +160,8 @@ const QuestionForm = ({ question, onSave, onCancel, isSaving = false, customCate
       return;
     }
 
-    if (answerType === 'rightwrong' && (!rightWrongImages.image1 || !rightWrongImages.image2 || !rightWrongImages.rightIcon || !rightWrongImages.wrongIcon)) {
-      toast.error(t('form.addAllRightWrongImages'));
+    if (answerType === 'rightwrong' && (!rightWrongImages.image1 || !rightWrongImages.image2)) {
+      toast.error(t('form.addBothImages'));
       return;
     }
 
@@ -137,450 +173,435 @@ const QuestionForm = ({ question, onSave, onCancel, isSaving = false, customCate
       imageAnswers: answerType === 'images' ? imageAnswers : undefined,
       rightWrongImages: answerType === 'rightwrong' ? rightWrongImages : undefined,
       category,
+      createdAt: question?.createdAt || Date.now(),
     };
 
     onSave(newQuestion);
   };
 
   return (
-    <Card className="p-6 space-y-6">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Category Selection */}
-        <div className="space-y-2">
-          <Label className="text-xl font-semibold">{t('category.label')}</Label>
-          <div className="flex gap-2">
-            <Select value={category} onValueChange={(v) => setCategory(v)}>
-              <SelectTrigger className="flex-1 h-12 text-lg">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-background border shadow-lg z-50">
-                <SelectItem value="M" className="text-lg">M - {t('category.morning')}</SelectItem>
-                <SelectItem value="E" className="text-lg">E - {t('category.evening')}</SelectItem>
-                <SelectItem value="N" className="text-lg">N - {t('category.night')}</SelectItem>
-                {customCategories.map((cat) => (
-                  <SelectItem key={cat} value={cat} className="text-lg">{cat}</SelectItem>
+    <>
+      <Card className="p-6 md:p-8 rounded-3xl border-2 border-purple-200 dark:border-purple-800 bg-white/95 dark:bg-slate-900/95 shadow-xl backdrop-blur-xl">
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* 1. CATEGORY SELECTION */}
+          <div className="space-y-3">
+            <Label className="text-lg md:text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <span>{t('category.label')}</span>
+            </Label>
+            <div className="flex flex-wrap items-center gap-3">
+              <Select value={category} onValueChange={(val) => setCategory(val)}>
+                <SelectTrigger className="w-full sm:w-64 h-12 rounded-xl text-base font-semibold border-purple-200 dark:border-purple-700">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-purple-200 dark:border-purple-800">
+                  <SelectItem value="M" className="text-base py-2.5">
+                    {t('category.morning')}
+                  </SelectItem>
+                  <SelectItem value="E" className="text-base py-2.5">
+                    {t('category.evening')}
+                  </SelectItem>
+                  <SelectItem value="N" className="text-base py-2.5">
+                    {t('category.night')}
+                  </SelectItem>
+                  {customCategories.map((cat) => (
+                    <SelectItem key={cat} value={cat} className="text-base py-2.5">
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {!showCustomInput ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowCustomInput(true)}
+                  className="rounded-xl h-12 text-sm md:text-base border-purple-200 dark:border-purple-700"
+                >
+                  <Plus className="w-4 h-4 mr-1.5" />
+                  {t('category.addCustom')}
+                </Button>
+              ) : (
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <Input
+                    value={customCategory}
+                    onChange={(e) => setCustomCategory(e.target.value)}
+                    placeholder="e.g. Sports, Colors..."
+                    className="h-12 rounded-xl text-base border-purple-200 dark:border-purple-700 w-48"
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleAddCustomCategory}
+                    className="h-12 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold"
+                  >
+                    <Check className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setShowCustomInput(false)}
+                    className="h-12 rounded-xl"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 2. QUESTION SENTENCE & TTS PREVIEW */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-lg md:text-xl font-bold text-slate-800 dark:text-slate-100">
+                {t('form.questionText')}
+              </Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleTestTTS}
+                className="text-purple-600 dark:text-purple-400 font-semibold gap-1.5 hover:bg-purple-100 dark:hover:bg-purple-950/50"
+              >
+                <Volume2 className="w-4 h-4" />
+                <span>Test Voice</span>
+              </Button>
+            </div>
+            <Input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="e.g. क्या आपने आज सुबह दाँत साफ़ किए?"
+              className="h-14 rounded-2xl text-lg md:text-xl px-4 border-2 border-purple-200 dark:border-purple-700 font-medium"
+            />
+          </div>
+
+          {/* 3. OPTIONAL MAIN QUESTION IMAGE */}
+          <div className="space-y-3 p-4 md:p-5 rounded-2xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200/60 dark:border-purple-800/40">
+            <Label className="text-base md:text-lg font-bold text-slate-800 dark:text-slate-200">
+              {t('form.questionImage')}
+            </Label>
+
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              {image ? (
+                <div className="relative group w-28 h-28 rounded-2xl overflow-hidden border-2 border-purple-300 dark:border-purple-700 bg-white dark:bg-slate-800 shadow-md">
+                  <img src={image} alt="Preview" className="w-full h-full object-contain p-1" />
+                  <button
+                    type="button"
+                    onClick={() => setImage('')}
+                    className="absolute top-1 right-1 p-1 rounded-full bg-red-600 text-white shadow hover:bg-red-700"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="w-28 h-28 rounded-2xl border-2 border-dashed border-purple-300 dark:border-purple-700 flex flex-col items-center justify-center text-purple-400 bg-white/50 dark:bg-slate-800/50">
+                  <ImageIcon className="w-8 h-8 mb-1" />
+                  <span className="text-xs">No image</span>
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-2">
+                <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold text-sm shadow-sm">
+                  <Upload className="w-4 h-4" />
+                  <span>{t('form.uploadImage')}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleFileUpload(file, 'main');
+                    }}
+                  />
+                </label>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => openStickerPicker('main')}
+                  className="rounded-xl border-purple-200 dark:border-purple-700 font-semibold text-sm h-10 gap-1.5"
+                >
+                  <Sparkles className="w-4 h-4 text-purple-600" />
+                  <span>{t('form.choosePreset')}</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* 4. ANSWER TYPE SELECTOR */}
+          <div className="space-y-3">
+            <Label className="text-lg md:text-xl font-bold text-slate-800 dark:text-slate-100">
+              {t('form.answerType')}
+            </Label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                { type: 'yesno' as AnswerType, label: t('settings.yesNo'), desc: 'Big Yes / No buttons' },
+                { type: 'rightwrong' as AnswerType, label: t('settings.rightWrong'), desc: '2 pictures comparison' },
+                { type: 'images' as AnswerType, label: t('settings.images'), desc: 'Visual picture choices' },
+              ].map((opt) => (
+                <button
+                  key={opt.type}
+                  type="button"
+                  onClick={() => setAnswerType(opt.type)}
+                  className={`p-4 rounded-2xl border-2 text-left transition-all ${
+                    answerType === opt.type
+                      ? 'border-purple-600 bg-purple-50 dark:bg-purple-950/40 ring-4 ring-purple-400/20 shadow-md'
+                      : 'border-slate-200 dark:border-slate-800 hover:border-purple-300 bg-white dark:bg-slate-800/60'
+                  }`}
+                >
+                  <div className="font-extrabold text-base md:text-lg text-slate-900 dark:text-slate-100">
+                    {opt.label}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{opt.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 5. DYNAMIC ANSWERS CONFIGURATION */}
+          {answerType === 'rightwrong' ? (
+            /* ROR SECTION */
+            <div className="space-y-4 p-5 rounded-2xl border-2 border-purple-200 dark:border-purple-800 bg-purple-50/30 dark:bg-purple-950/10">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">
+                {t('form.questionImages')}
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* PICTURE 1 */}
+                <div className="p-4 rounded-xl border border-purple-200 dark:border-purple-700 bg-white dark:bg-slate-800 space-y-3">
+                  <span className="font-bold text-sm text-slate-700 dark:text-slate-300">
+                    {t('form.image1')}
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-900 border border-slate-200 flex items-center justify-center">
+                      {rightWrongImages.image1 ? (
+                        <img src={rightWrongImages.image1} alt="1" className="w-full h-full object-contain p-1" />
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Image 1</span>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="cursor-pointer inline-flex items-center justify-center px-3 py-1.5 rounded-lg bg-purple-600 text-white font-medium text-xs">
+                        <Upload className="w-3.5 h-3.5 mr-1" />
+                        <span>Upload</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileUpload(file, 'rw1');
+                          }}
+                        />
+                      </label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openStickerPicker('rw1')}
+                        className="text-xs h-8"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 mr-1 text-purple-600" />
+                        <span>Sticker</span>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* PICTURE 2 */}
+                <div className="p-4 rounded-xl border border-purple-200 dark:border-purple-700 bg-white dark:bg-slate-800 space-y-3">
+                  <span className="font-bold text-sm text-slate-700 dark:text-slate-300">
+                    {t('form.image2')}
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-900 border border-slate-200 flex items-center justify-center">
+                      {rightWrongImages.image2 ? (
+                        <img src={rightWrongImages.image2} alt="2" className="w-full h-full object-contain p-1" />
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Image 2</span>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="cursor-pointer inline-flex items-center justify-center px-3 py-1.5 rounded-lg bg-purple-600 text-white font-medium text-xs">
+                        <Upload className="w-3.5 h-3.5 mr-1" />
+                        <span>Upload</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileUpload(file, 'rw2');
+                          }}
+                        />
+                      </label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openStickerPicker('rw2')}
+                        className="text-xs h-8"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 mr-1 text-purple-600" />
+                        <span>Sticker</span>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : answerType === 'images' ? (
+            /* MULTI-CHOICE IMAGE OPTIONS */
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-lg font-bold text-slate-800 dark:text-slate-100">
+                  {t('form.imageAnswers')}
+                </Label>
+                <Button
+                  type="button"
+                  onClick={addImageAnswer}
+                  className="rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold gap-1.5"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{t('form.addAnswer')}</span>
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {imageAnswers.map((ans, idx) => (
+                  <div
+                    key={ans.id}
+                    className="p-4 rounded-2xl border-2 border-purple-200/80 dark:border-purple-800 bg-white dark:bg-slate-800/80 shadow-sm space-y-3 relative"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-sm text-purple-600 dark:text-purple-400">
+                        Option #{idx + 1}
+                      </span>
+                      {imageAnswers.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeImageAnswer(ans.id)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 h-8 w-8 rounded-full"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-900 border border-slate-200 flex items-center justify-center flex-shrink-0">
+                        {ans.image ? (
+                          <img src={ans.image} alt={ans.text} className="w-full h-full object-contain p-1" />
+                        ) : (
+                          <span className="text-2xl">🌟</span>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col gap-1.5 flex-1">
+                        <div className="flex gap-2">
+                          <label className="cursor-pointer inline-flex items-center px-3 py-1.5 rounded-lg bg-purple-600 text-white font-medium text-xs">
+                            <Upload className="w-3.5 h-3.5 mr-1" />
+                            <span>Upload</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleFileUpload(file, ans.id);
+                              }}
+                            />
+                          </label>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openStickerPicker(ans.id)}
+                            className="text-xs h-8"
+                          >
+                            <Sparkles className="w-3.5 h-3.5 mr-1 text-purple-600" />
+                            <span>Sticker</span>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Input
+                      value={ans.text}
+                      onChange={(e) => updateImageAnswer(ans.id, 'text', e.target.value)}
+                      placeholder="Option label (e.g. दूध / Milk)"
+                      className="rounded-xl h-11 text-base border-purple-200 dark:border-purple-700"
+                    />
+                  </div>
                 ))}
-              </SelectContent>
-            </Select>
+              </div>
+            </div>
+          ) : null}
+
+          {/* 6. SUBMIT BUTTONS */}
+          <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-purple-100 dark:border-purple-800/60">
+            <Button
+              type="submit"
+              disabled={isSaving}
+              className="flex-1 h-14 rounded-2xl text-xl font-extrabold bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-xl"
+            >
+              <Check className="w-6 h-6 mr-2" />
+              {isSaving ? t('form.saving') : t('form.save')}
+            </Button>
             <Button
               type="button"
               variant="outline"
-              size="lg"
-              onClick={() => setShowCustomInput(!showCustomInput)}
-              className="h-12 px-4"
+              onClick={onCancel}
+              className="sm:w-36 h-14 rounded-2xl text-lg font-bold border-2"
             >
-              <Plus className="w-5 h-5" />
+              {t('form.cancel')}
             </Button>
           </div>
-          {showCustomInput && (
-            <div className="flex gap-2 mt-2">
-              <Input
-                value={customCategory}
-                onChange={(e) => setCustomCategory(e.target.value)}
-                placeholder={t('category.addCustom')}
-                className="flex-1 h-12 text-lg"
-              />
-              <Button type="button" onClick={handleAddCustomCategory} className="h-12">
-                {t('form.save')}
-              </Button>
-            </div>
-          )}
-        </div>
+        </form>
+      </Card>
 
-        <div className="space-y-2">
-          <Label htmlFor="question-text" className="text-xl font-semibold">
-            {t('form.questionText')}
-          </Label>
-          <Input
-            id="question-text"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder={t('form.questionText')}
-            className="text-2xl h-16 border-2"
-          />
-        </div>
-
-        {template !== 'ror' && (
-          <div className="space-y-2">
-            <Label className="text-xl font-semibold">{t('form.questionImage')}</Label>
-            <div className="flex items-center gap-4">
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleImageUpload(file, 'main');
-                }}
-                className="flex-1"
-              />
-              {image && (
-                <div className="w-20 h-20 rounded-lg overflow-hidden border-2 relative group">
-                  <img src={image} alt="Preview" className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setImageToCrop(image);
-                      setCropTarget('main');
-                      setCropperOpen(true);
-                    }}
-                    className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
-                  >
-                    <Crop className="w-6 h-6 text-white" />
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {template !== 'ror' && (
-          <Tabs value={answerType} onValueChange={(v) => setAnswerType(v as AnswerType)}>
-            <TabsList className={`grid w-full h-14 ${template === 'default' ? 'grid-cols-2' : 'grid-cols-3'}`}>
-              <TabsTrigger value="yesno" className="text-lg">{t('settings.yesNo')}</TabsTrigger>
-              <TabsTrigger value="images" className="text-lg">{t('settings.images')}</TabsTrigger>
-              {template !== 'default' && (
-                <TabsTrigger value="rightwrong" className="text-lg">{t('settings.rightWrong')}</TabsTrigger>
-              )}
-            </TabsList>
-
-            <TabsContent value="yesno" className="mt-4">
-              <p className="text-muted-foreground text-center py-4">
-                {t('settings.yesNo')}
-              </p>
-            </TabsContent>
-
-            <TabsContent value="images" className="mt-4 space-y-4">
-              {imageAnswers.map((answer, index) => (
-                <Card key={answer.id} className="p-4 space-y-3">
-                  <div className="flex justify-between items-center">
-                    <Label className="text-lg font-semibold">{t('form.answerText')} {index + 1}</Label>
-                    {imageAnswers.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeImageAnswer(answer.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-
-                  <Input
-                    value={answer.text}
-                    onChange={(e) => updateImageAnswer(answer.id, 'text', e.target.value)}
-                    placeholder={t('form.answerText')}
-                    className="text-xl h-12"
-                  />
-
-                  <div className="flex items-center gap-4">
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          handleImageUpload(file, answer.id);
-                        }
-                      }}
-                      className="flex-1"
-                    />
-                    {answer.image && (
-                      <div className="w-16 h-16 rounded-lg overflow-hidden border-2 relative group">
-                        <img
-                          src={answer.image}
-                          alt="Preview"
-                          className="w-full h-full object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setImageToCrop(answer.image);
-                            setCropTarget(answer.id);
-                            setCropperOpen(true);
-                          }}
-                          className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
-                        >
-                          <Crop className="w-5 h-5 text-white" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              ))}
-
-              <Button
-                type="button"
-                variant="outline"
-                onClick={addImageAnswer}
-                className="w-full h-12 text-lg"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                {t('form.addAnswer')}
-              </Button>
-            </TabsContent>
-          </Tabs>
-        )}
-
-        {template === 'ror' && (
-          <div className="space-y-6">
-            {/* Question Images Section - Above Tabs */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">{t('form.questionImages')}</h3>
-              <Card className="p-4 space-y-3">
-                <Label className="text-lg font-semibold">{t('form.image1')}</Label>
-                <div className="flex items-center gap-4">
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleImageUpload(file, 'rw1');
-                    }}
-                    className="flex-1"
-                  />
-                  {rightWrongImages.image1 && (
-                    <div className="w-16 h-16 rounded-lg overflow-hidden border-2 relative group">
-                      <img
-                        src={rightWrongImages.image1}
-                        alt="Image 1 Preview"
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setImageToCrop(rightWrongImages.image1);
-                          setCropTarget('rw1');
-                          setCropperOpen(true);
-                        }}
-                        className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
-                      >
-                        <Crop className="w-5 h-5 text-white" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </Card>
-
-              <Card className="p-4 space-y-3">
-                <Label className="text-lg font-semibold">{t('form.image2')}</Label>
-                <div className="flex items-center gap-4">
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleImageUpload(file, 'rw2');
-                    }}
-                    className="flex-1"
-                  />
-                  {rightWrongImages.image2 && (
-                    <div className="w-16 h-16 rounded-lg overflow-hidden border-2 relative group">
-                      <img
-                        src={rightWrongImages.image2}
-                        alt="Image 2 Preview"
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setImageToCrop(rightWrongImages.image2);
-                          setCropTarget('rw2');
-                          setCropperOpen(true);
-                        }}
-                        className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
-                      >
-                        <Crop className="w-5 h-5 text-white" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </div>
-
-            {/* Tabs for Answer Type */}
-          <Tabs value={answerType} onValueChange={(v) => setAnswerType(v as AnswerType)}>
-            <TabsList className="grid w-full grid-cols-2 h-14">
-              <TabsTrigger value="rightwrong" className="text-lg">{t('settings.rightWrong')}</TabsTrigger>
-              <TabsTrigger value="images" className="text-lg">{t('settings.images')}</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="images" className="mt-4 space-y-4">
-              {imageAnswers.map((answer, index) => (
-                <Card key={answer.id} className="p-4 space-y-3">
-                  <div className="flex justify-between items-center">
-                    <Label className="text-lg font-semibold">{t('form.answerText')} {index + 1}</Label>
-                    {imageAnswers.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeImageAnswer(answer.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-
-                  <Input
-                    value={answer.text}
-                    onChange={(e) => updateImageAnswer(answer.id, 'text', e.target.value)}
-                    placeholder={t('form.answerText')}
-                    className="text-xl h-12"
-                  />
-
-                  <div className="flex items-center gap-4">
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          handleImageUpload(file, answer.id);
-                        }
-                      }}
-                      className="flex-1"
-                    />
-                    {answer.image && (
-                      <div className="w-16 h-16 rounded-lg overflow-hidden border-2 relative group">
-                        <img
-                          src={answer.image}
-                          alt="Preview"
-                          className="w-full h-full object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setImageToCrop(answer.image);
-                            setCropTarget(answer.id);
-                            setCropperOpen(true);
-                          }}
-                          className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
-                        >
-                          <Crop className="w-5 h-5 text-white" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              ))}
-
-              <Button
-                type="button"
-                variant="outline"
-                onClick={addImageAnswer}
-                className="w-full h-12 text-lg"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                {t('form.addAnswer')}
-              </Button>
-            </TabsContent>
-
-            <TabsContent value="rightwrong" className="mt-4 space-y-4">
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">{t('form.answerIcons')}</h3>
-                <Card className="p-4 space-y-3 bg-green-50">
-                  <Label className="text-lg font-semibold">{t('form.rightIcon')}</Label>
-                <div className="flex items-center gap-4">
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleImageUpload(file, 'rwRight');
-                    }}
-                    className="flex-1"
-                  />
-                  {rightWrongImages.rightIcon && (
-                    <div className="w-16 h-16 rounded-lg overflow-hidden border-2 relative group">
-                      <img
-                        src={rightWrongImages.rightIcon}
-                        alt="Right Icon Preview"
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setImageToCrop(rightWrongImages.rightIcon);
-                          setCropTarget('rwRight');
-                          setCropperOpen(true);
-                        }}
-                        className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
-                      >
-                        <Crop className="w-5 h-5 text-white" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </Card>
-
-              <Card className="p-4 space-y-3 bg-red-50">
-                <Label className="text-lg font-semibold">{t('form.wrongIcon')}</Label>
-                <div className="flex items-center gap-4">
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleImageUpload(file, 'rwWrong');
-                    }}
-                    className="flex-1"
-                  />
-                  {rightWrongImages.wrongIcon && (
-                    <div className="w-16 h-16 rounded-lg overflow-hidden border-2 relative group">
-                      <img
-                        src={rightWrongImages.wrongIcon}
-                        alt="Wrong Icon Preview"
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setImageToCrop(rightWrongImages.wrongIcon);
-                          setCropTarget('rwWrong');
-                          setCropperOpen(true);
-                        }}
-                        className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
-                      >
-                        <Crop className="w-5 h-5 text-white" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </Card>
-              </div>
-            </TabsContent>
-          </Tabs>
-          </div>
-        )}
-
-        <div className="flex gap-4 pt-4">
-          <Button type="submit" size="lg" className="flex-1 text-xl h-14" disabled={isSaving}>
-            {isSaving ? t('form.saving') : t('form.save')}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            onClick={onCancel}
-            className="flex-1 text-xl h-14"
-            disabled={isSaving}
-          >
-            {t('form.cancel')}
-          </Button>
-        </div>
-      </form>
-
+      {/* Image Cropper Modal */}
       <ImageCropper
-        imageSrc={imageToCrop}
         open={cropperOpen}
+        imageSrc={imageToCrop}
         onCropComplete={handleCropComplete}
         onCancel={() => {
           setCropperOpen(false);
           setImageToCrop('');
         }}
       />
-    </Card>
+
+      {/* Preset Stickers Modal */}
+      <Dialog open={stickerPickerOpen} onOpenChange={setStickerPickerOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-auto rounded-3xl p-6 bg-white dark:bg-slate-900 border-2 border-purple-200 dark:border-purple-800">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-purple-700 dark:text-purple-300 flex items-center gap-2">
+              <Sparkles className="w-6 h-6" />
+              <span>{language === 'hi' ? 'स्टिकर चुनें' : 'Choose a Preset Sticker'}</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 py-4">
+            {PRESET_STICKERS.map((stk) => (
+              <button
+                key={stk.id}
+                type="button"
+                onClick={() => selectSticker(stk.svgData)}
+                className="flex flex-col items-center justify-center p-3 rounded-2xl border-2 border-slate-100 dark:border-slate-800 hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-950/40 hover:scale-105 transition-all shadow-sm"
+              >
+                <div className="w-16 h-16 rounded-xl bg-white dark:bg-slate-800 p-1 flex items-center justify-center shadow-inner">
+                  <img src={stk.svgData} alt={stk.nameEn} className="w-full h-full object-contain" />
+                </div>
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300 mt-2 text-center line-clamp-1">
+                  {language === 'hi' ? stk.nameHi : stk.nameEn}
+                </span>
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
